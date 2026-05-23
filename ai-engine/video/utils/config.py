@@ -22,7 +22,7 @@ LOG_DIR = Path(
 
 CSV_PATH = (
     DATASET_DIR /
-    "processed/metadata/final_dataset.csv"
+    "processed/metadata/dataset.csv"
 )
 
 IMAGE_SIZE = 224
@@ -32,3 +32,18 @@ BATCH_SIZE = 16
 EPOCHS = 10
 
 LEARNING_RATE = 1e-4
+
+CHECKPOINT_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+OUTPUT_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+LOG_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
