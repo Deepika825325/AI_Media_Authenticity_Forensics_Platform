@@ -1,36 +1,34 @@
 import torch
 import torch.nn as nn
+import pandas as pd
 
 from tqdm import tqdm
+from pathlib import Path
 
-from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
+from torch.utils.data import (
+    DataLoader,
+    random_split
+)
 
 from video.datasets.deepfake_dataset import (
     DeepFakeDataset
 )
 
-from video.models.xceptionnet import (
-    DeepFakeModel
+from video.models.swin_transformer import (
+    SwinTransformerModel
 )
 
 from video.utils.config import *
 from video.utils.augmentations import *
 
-# =========================================
-# DEVICE
-# =========================================
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 device = torch.device(
     "cuda" if torch.cuda.is_available()
     else "cpu"
 )
 
-print(f"Using device: {device}")
-
-# =========================================
-# DATASET
-# =========================================
+print(f"\nUsing device: {device}")
 
 dataset = DeepFakeDataset(
     CSV_PATH,
@@ -38,43 +36,43 @@ dataset = DeepFakeDataset(
 )
 
 train_size = int(0.8 * len(dataset))
+
 valid_size = len(dataset) - train_size
 
-train_dataset, valid_dataset = (
-    torch.utils.data.random_split(
-        dataset,
-        [train_size, valid_size]
-    )
+train_dataset, valid_dataset = random_split(
+    dataset,
+    [train_size, valid_size]
 )
 
 train_loader = DataLoader(
     train_dataset,
     batch_size=BATCH_SIZE,
-    shuffle=True
+    shuffle=True,
+    num_workers=2
 )
 
 valid_loader = DataLoader(
     valid_dataset,
     batch_size=BATCH_SIZE,
-    shuffle=False
+    shuffle=False,
+    num_workers=2
 )
 
-# =========================================
-# MODEL
-# =========================================
-
-model = DeepFakeModel().to(device)
+model = SwinTransformerModel().to(device)
 
 criterion = nn.BCEWithLogitsLoss()
 
-optimizer = torch.optim.Adam(
+optimizer = torch.optim.AdamW(
     model.parameters(),
     lr=LEARNING_RATE
 )
 
-# =========================================
-# TRAIN LOOP
-# =========================================
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    optimizer,
+    T_max=EPOCHS
+)
+
+best_loss = float("inf")
 
 for epoch in range(EPOCHS):
 
@@ -92,7 +90,10 @@ for epoch in range(EPOCHS):
 
         outputs = model(images)
 
-        loss = criterion(outputs, labels)
+        loss = criterion(
+            outputs,
+            labels
+        )
 
         optimizer.zero_grad()
 
@@ -110,18 +111,34 @@ for epoch in range(EPOCHS):
             loss=loss.item()
         )
 
-    print(
-        f"\nEpoch {epoch+1} Loss: "
-        f"{running_loss/len(train_loader)}"
+    epoch_loss = (
+        running_loss /
+        len(train_loader)
     )
 
-# =========================================
-# SAVE MODEL
-# =========================================
+    scheduler.step()
 
-torch.save(
-    model.state_dict(),
-    CHECKPOINT_DIR / "deepfake_detector.pth"
-)
+    print(
+        f"\nEpoch {epoch+1} Loss: "
+        f"{epoch_loss:.6f}"
+    )
 
-print("\nModel saved successfully.")
+    if epoch_loss < best_loss:
+
+        best_loss = epoch_loss
+
+        save_path = (
+            CHECKPOINT_DIR /
+            "best_swin_model.pth"
+        )
+
+        torch.save(
+            model.state_dict(),
+            save_path
+        )
+
+        print(
+            f"\nBest model saved to:\n{save_path}"
+        )
+
+print("\nTraining completed.")

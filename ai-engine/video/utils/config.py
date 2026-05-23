@@ -8,7 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parents[3]
 
 CSV_PATH = (
     ROOT_DIR /
-    "datasets/processed/metadata/dataset.csv"
+    "datasets/metadata/final_dataset.csv"
 )
 
 IMAGE_SIZE = 224
