@@ -1,6 +1,8 @@
 from pathlib import Path
 
-ROOT_DIR = Path("/content/AI_Media_Authenticity_Forensics_Platform")
+ROOT_DIR = Path(
+    "/content/AI_Media_Authenticity_Forensics_Platform"
+)
 
 DATASET_DIR = Path(
     "/content/drive/MyDrive/DeepVerify/datasets"
@@ -20,7 +22,7 @@ LOG_DIR = Path(
 
 CSV_PATH = (
     DATASET_DIR /
-    "metadata/final_dataset.csv"
+    "processed/metadata/final_dataset.csv"
 )
 
 IMAGE_SIZE = 224
