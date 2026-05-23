@@ -1,49 +1,50 @@
-from pathlib import Path
+import pandas as pd
 
-ROOT_DIR = Path(
-    "/content/AI_Media_Authenticity_Forensics_Platform"
-)
+from pathlib import Path
 
 DATASET_DIR = Path(
     "/content/drive/MyDrive/DeepVerify/datasets"
 )
 
-CHECKPOINT_DIR = Path(
-    "/content/drive/MyDrive/DeepVerify/checkpoints"
-)
-
-OUTPUT_DIR = Path(
-    "/content/drive/MyDrive/DeepVerify/outputs"
-)
-
-LOG_DIR = Path(
-    "/content/drive/MyDrive/DeepVerify/logs"
-)
-
-CSV_PATH = (
+csv_path = (
     DATASET_DIR /
     "processed/metadata/dataset.csv"
 )
 
-IMAGE_SIZE = 224
+df = pd.read_csv(csv_path)
 
-BATCH_SIZE = 16
+def fix_path(old_path):
 
-EPOCHS = 10
+    old_path = old_path.replace("\\", "/")
 
-LEARNING_RATE = 1e-4
+    if "aligned_faces/" in old_path:
 
-CHECKPOINT_DIR.mkdir(
-    parents=True,
-    exist_ok=True
+        relative = old_path.split(
+            "aligned_faces/"
+        )[1]
+
+        return str(
+            DATASET_DIR /
+            "processed/aligned_faces" /
+            relative
+        )
+
+    return old_path
+
+df["image_path"] = df["image_path"].apply(
+    fix_path
 )
 
-OUTPUT_DIR.mkdir(
-    parents=True,
-    exist_ok=True
+save_path = (
+    DATASET_DIR /
+    "processed/metadata/dataset_colab.csv"
 )
 
-LOG_DIR.mkdir(
-    parents=True,
-    exist_ok=True
+df.to_csv(
+    save_path,
+    index=False
 )
+
+print("\nSaved fixed CSV to:")
+
+print(save_path)
